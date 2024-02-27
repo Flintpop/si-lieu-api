@@ -60,10 +60,6 @@ public class LieuServlet extends HttpServlet {
 
   @Override
   protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
-    if (!this.validateId(response, request.getParameter("lieuId"))) {
-      return;
-    }
-
     StringBuilder jsonBody = new StringBuilder();
     try (BufferedReader reader = request.getReader()) {
       String line;

@@ -9,13 +9,13 @@ import jakarta.servlet.http.HttpServletResponse;
 import model.Lieu;
 import mariadbPojo.LieuPojo;
 import routes.Routes;
+import validation.IdValidateur;
 import validation.LieuValidateur;
 import validation.ValidateurResultat;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.List;
-import java.util.UUID;
 
 @WebServlet(name = "LieuServlet", value = Routes.lieux)
 public class LieuServlet extends HttpServlet {
@@ -30,17 +30,24 @@ public class LieuServlet extends HttpServlet {
     String lieuIdParam = request.getParameter("lieuId");
     if (lieuIdParam != null) {
       try {
-        UUID lieuId = UUID.fromString(lieuIdParam);
-        LieuPojo lieuEntity = Lieu.getLieuById(lieuId);
+        if (!this.validateId(response, request.getParameter("lieuId"))) {
+          return;
+        }
+
+        int id = Integer.parseInt(request.getParameter("id"));
+        LieuPojo lieuEntity = Lieu.getLieuById(id);
+
         if (lieuEntity == null) {
           response.setStatus(HttpServletResponse.SC_NOT_FOUND);
           response.getWriter().write("{\"error\":\"Lieu non trouvé.\"}");
         } else {
           response.getWriter().write(gson.toJson(lieuEntity));
         }
+        response.getWriter().flush();
       } catch (IllegalArgumentException e) {
         response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
         response.getWriter().write("{\"error\":\"Format de l'ID invalide.\"}");
+        response.getWriter().flush();
       }
       return;
     }
@@ -48,10 +55,15 @@ public class LieuServlet extends HttpServlet {
     List<LieuPojo> lieux = Lieu.getListeLieux();
     response.getWriter().write(gson.toJson(lieux));
     response.setStatus(HttpServletResponse.SC_OK);
+    response.getWriter().flush();
   }
 
   @Override
   protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    if (!this.validateId(response, request.getParameter("lieuId"))) {
+      return;
+    }
+
     StringBuilder jsonBody = new StringBuilder();
     try (BufferedReader reader = request.getReader()) {
       String line;
@@ -59,6 +71,7 @@ public class LieuServlet extends HttpServlet {
         jsonBody.append(line);
       }
     }
+
 
     try {
       LieuPojo lieuEntity = gson.fromJson(jsonBody.toString(), LieuPojo.class);
@@ -82,12 +95,11 @@ public class LieuServlet extends HttpServlet {
 
   @Override
   protected void doPut(HttpServletRequest request, HttpServletResponse response) throws IOException {
-    String lieuIdParam = request.getParameter("lieuId");
-    if (lieuIdParam == null || lieuIdParam.isEmpty()) {
-      response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-      response.getWriter().write("{\"error\":\"ID du lieu requis.\"}");
+    if (!this.validateId(response, request.getParameter("lieuId"))) {
       return;
     }
+    String lieuIdParam = request.getParameter("lieuId");
+
 
     StringBuilder jsonBody = new StringBuilder();
     try (BufferedReader reader = request.getReader()) {
@@ -98,7 +110,7 @@ public class LieuServlet extends HttpServlet {
     }
 
     try {
-      UUID lieuId = UUID.fromString(lieuIdParam);
+      int lieuId = Integer.parseInt(lieuIdParam);
       LieuPojo lieuToUpdate = gson.fromJson(jsonBody.toString(), LieuPojo.class);
 
       LieuValidateur validateur = new LieuValidateur();
@@ -111,6 +123,7 @@ public class LieuServlet extends HttpServlet {
       }
 
       LieuPojo updatedLieu = Lieu.mettreAJourLieu(lieuId, lieuToUpdate);
+
       if (updatedLieu == null) {
         response.setStatus(HttpServletResponse.SC_NOT_FOUND);
         response.getWriter().write("{\"error\":\"Lieu non trouvé.\"}");
@@ -126,15 +139,12 @@ public class LieuServlet extends HttpServlet {
 
   @Override
   protected void doDelete(HttpServletRequest request, HttpServletResponse response) throws IOException {
-    String lieuIdParam = request.getParameter("lieuId");
-    if (lieuIdParam == null || lieuIdParam.isEmpty()) {
-      response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-      response.getWriter().write("{\"error\":\"ID du lieu requis.\"}");
+    if (!this.validateId(response, request.getParameter("lieuId"))) {
       return;
     }
 
     try {
-      UUID lieuId = UUID.fromString(lieuIdParam);
+      int lieuId = Integer.parseInt(request.getParameter("lieuId"));
       boolean deleted = Lieu.supprimerLieu(lieuId);
       if (deleted) {
         response.setStatus(HttpServletResponse.SC_NO_CONTENT);
@@ -148,4 +158,15 @@ public class LieuServlet extends HttpServlet {
     }
   }
 
+  private boolean validateId(HttpServletResponse response, String id) throws IOException {
+    IdValidateur idValidateur = new IdValidateur();
+    ValidateurResultat validationResult = idValidateur.valider(id);
+    if (!validationResult.isValid()) {
+      response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+      response.getWriter().write("{\"error\":\"" + validationResult.getErrorMessages() + "\"}");
+      response.getWriter().flush();
+      return false;
+    }
+    return true;
+  }
 }

@@ -29,24 +29,6 @@ public class LieuValidateur implements Validateur<LieuPojo> {
       isValid = false;
     }
 
-    // Validation de la latitude
-//    if (input.getLatitude() == null) {
-//      errorMessages.add("La latitude ne peut pas être vide.");
-//      isValid = false;
-//    } else if (input.getLatitude() < -90 || input.getLatitude() > 90) {
-//      errorMessages.add("La latitude doit être comprise entre -90 et 90.");
-//      isValid = false;
-//    }
-//
-//    // Validation de la longitude
-//    if (input.getLongitude() == null) {
-//      errorMessages.add("La longitude ne peut pas être vide.");
-//      isValid = false;
-//    } else if (input.getLongitude() < -180 || input.getLongitude() > 180) {
-//      errorMessages.add("La longitude doit être comprise entre -180 et 180.");
-//      isValid = false;
-//    }
-
     return new ValidateurResultat(isValid, errorMessages);
   }
 }

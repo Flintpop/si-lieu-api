@@ -24,12 +24,10 @@ public class EvenementPojo {
   @Basic
   @Column(name = "maxParticipant", nullable = false)
   private int maxParticipant;
-  @Basic
-  @Column(name = "lieuId", nullable = false)
-  private int lieuId;
+
   @ManyToOne
   @JoinColumn(name = "lieuId", referencedColumnName = "id", nullable = false)
-  private LieuPojo lieuByLieuId;
+  private LieuPojo lieu;
 
   public int getId() {
     return id;
@@ -71,13 +69,6 @@ public class EvenementPojo {
     this.maxParticipant = maxParticipant;
   }
 
-  public int getLieuId() {
-    return lieuId;
-  }
-
-  public void setLieuId(int lieuId) {
-    this.lieuId = lieuId;
-  }
 
   @Override
   public boolean equals(Object o) {
@@ -88,7 +79,6 @@ public class EvenementPojo {
 
     if (id != that.id) return false;
     if (maxParticipant != that.maxParticipant) return false;
-    if (lieuId != that.lieuId) return false;
     if (nom != null ? !nom.equals(that.nom) : that.nom != null) return false;
     if (dateHeureDebut != null ? !dateHeureDebut.equals(that.dateHeureDebut) : that.dateHeureDebut != null)
       return false;
@@ -102,15 +92,14 @@ public class EvenementPojo {
     result = 31 * result + (dateHeureDebut != null ? dateHeureDebut.hashCode() : 0);
     result = 31 * result + (dateHeureFin != null ? dateHeureFin.hashCode() : 0);
     result = 31 * result + maxParticipant;
-    result = 31 * result + lieuId;
     return result;
   }
 
-  public LieuPojo getLieuByLieuId() {
-    return lieuByLieuId;
+  public LieuPojo getLieu() {
+    return lieu;
   }
 
-  public void setLieuByLieuId(LieuPojo lieuByLieuId) {
-    this.lieuByLieuId = lieuByLieuId;
+  public void setLieu(LieuPojo lieuByLieuId) {
+    this.lieu = lieuByLieuId;
   }
 }

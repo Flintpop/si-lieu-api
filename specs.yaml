@@ -40,8 +40,7 @@ paths:
           in: path
           required: true
           schema:
-            type: string
-            format: uuid
+            type: integer
       responses:
         '200':
           description: Un lieu détaillé
@@ -56,8 +55,7 @@ paths:
           in: path
           required: true
           schema:
-            type: string
-            format: uuid
+            type: integer
       requestBody:
         required: true
         content:
@@ -78,8 +76,7 @@ paths:
           in: path
           required: true
           schema:
-            type: string
-            format: uuid
+            type: integer
       responses:
         '204':
           description: Lieu supprimé
@@ -96,8 +93,7 @@ components:
         - longitude
       properties:
         id:
-          type: string
-          format: uuid
+          type: integer
           description: Identifiant unique du lieu.
         name:
           type: string

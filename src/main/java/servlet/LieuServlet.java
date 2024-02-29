@@ -6,6 +6,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.ConstraintViolationException;
 import model.Lieu;
 import mariadbPojo.LieuPojo;
 import routes.Routes;
@@ -15,6 +16,7 @@ import validation.ValidateurResultat;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 
 @WebServlet(name = "LieuServlet", value = Routes.lieux)
@@ -151,6 +153,15 @@ public class LieuServlet extends HttpServlet {
     } catch (IllegalArgumentException e) {
       response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
       response.getWriter().write("{\"error\":\"Format de l'ID invalide.\"}");
+    } catch (ConstraintViolationException e) {
+      response.setStatus(HttpServletResponse.SC_CONFLICT);
+      response.getWriter().write("{\"error\":\"Impossible de supprimer le lieu car il est utilisé par un événement.\"}");
+    } catch (Exception e) {
+      response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+      // Log the exception
+      response.getWriter().
+              write("{\"error\":\"Une erreur s'est produite.\"" +
+                      "\n\"message\": \" " + Arrays.toString(e.getStackTrace()) + "\"}");
     }
   }
 

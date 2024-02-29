@@ -2,7 +2,9 @@ package model;
 
 import database.MariaDB;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceException;
 import jakarta.persistence.TypedQuery;
+import jakarta.validation.ConstraintViolationException;
 import mariadbPojo.LieuPojo;
 
 import java.util.List;
@@ -57,7 +59,7 @@ public class Lieu {
     }
   }
 
-  public static boolean supprimerLieu(int id) {
+  public static boolean supprimerLieu(int id) throws ConstraintViolationException {
     EntityManager em = MariaDB.getEntityManager();
     try {
       LieuPojo lieu = em.find(LieuPojo.class, id);
@@ -67,9 +69,14 @@ public class Lieu {
         em.getTransaction().commit();
         return true;
       }
-      return false;
+    } catch (PersistenceException e) {
+      if (e.getCause() instanceof ConstraintViolationException) {
+        System.out.println("Impossible de supprimer le lieu, il est utilisé par un événement.");
+        throw new ConstraintViolationException("Impossible de supprimer le lieu, il est utilisé par un événement.", null);
+      }
     } finally {
       em.close();
     }
+    return false;
   }
 }

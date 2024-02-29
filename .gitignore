@@ -79,4 +79,3 @@ build/
 ### Mac OS ###
 .DS_Store
 /.idea/dataSources.xml
-/src/main/resources/META-INF/persistence.xml

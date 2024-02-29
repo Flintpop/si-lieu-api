@@ -16,6 +16,7 @@ import validation.ValidateurResultat;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -153,7 +154,7 @@ public class LieuServlet extends HttpServlet {
     } catch (IllegalArgumentException e) {
       response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
       response.getWriter().write("{\"error\":\"Format de l'ID invalide.\"}");
-    } catch (ConstraintViolationException e) {
+    } catch (SQLIntegrityConstraintViolationException e) {
       response.setStatus(HttpServletResponse.SC_CONFLICT);
       response.getWriter().write("{\"error\":\"Impossible de supprimer le lieu car il est utilisé par un événement.\"}");
     } catch (Exception e) {

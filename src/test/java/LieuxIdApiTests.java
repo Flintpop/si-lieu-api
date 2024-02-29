@@ -7,11 +7,16 @@ public class LieuxIdApiTests {
 
   @Test
   public void testGetLocationById() {
-    int testId = 1; // Assurez-vous que cet ID existe dans votre base de données ou mock
-    given().pathParam("lieuId", testId)
-            .when().get("http://localhost:8082/lieux/{lieuId}")
-            .then().statusCode(200)
-            .body("id", equalTo(testId));
+    int testId = 2; // Assurez-vous que cet ID existe dans votre base de données ou mock
+    given()
+            .pathParam("id", testId)
+            .when()
+            .get("http://localhost:8082/lieux?id={id}")
+            .then()
+            .log().ifValidationFails()
+            .statusCode(200)
+            .body("id", equalTo(testId))
+            .log().body();
   }
 
   @Test
@@ -26,18 +31,27 @@ public class LieuxIdApiTests {
                 }
                 """;
 
-    given().contentType("application/json")
-            .pathParam("lieuId", testId)
+    given()
+            .contentType("application/json")
             .body(updatedLocationJson)
-            .when().put("http://localhost:8082/lieux/{lieuId}")
-            .then().statusCode(200);
+            .when()
+            .put("http://localhost:8082/lieux?id=" + testId)
+            .then()
+            .log().ifValidationFails()
+            .statusCode(200)
+            .log().body();
   }
 
   @Test
   public void testDeleteLocation() {
     int testId = 1; // Assurez-vous que cet ID existe et est supprimable
-    given().pathParam("lieuId", testId)
-            .when().delete("http://localhost:8082/lieux/{lieuId}")
-            .then().statusCode(204);
+    given()
+            .pathParam("id", testId)
+            .when()
+            .delete("http://localhost:8082/lieux?id={id}")
+            .then()
+            .log().ifValidationFails()
+            .statusCode(204)
+            .log().body();
   }
 }

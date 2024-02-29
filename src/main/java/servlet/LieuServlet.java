@@ -27,10 +27,10 @@ public class LieuServlet extends HttpServlet {
     response.setContentType("application/json");
     response.setCharacterEncoding("UTF-8");
 
-    String lieuIdParam = request.getParameter("lieuId");
+    String lieuIdParam = request.getParameter("id");
     if (lieuIdParam != null) {
       try {
-        if (!this.validateId(response, request.getParameter("lieuId"))) {
+        if (!this.validateId(response, request.getParameter("id"))) {
           return;
         }
 
@@ -91,10 +91,10 @@ public class LieuServlet extends HttpServlet {
 
   @Override
   protected void doPut(HttpServletRequest request, HttpServletResponse response) throws IOException {
-    if (!this.validateId(response, request.getParameter("lieuId"))) {
+    if (!this.validateId(response, request.getParameter("id"))) {
       return;
     }
-    String lieuIdParam = request.getParameter("lieuId");
+    String lieuIdParam = request.getParameter("id");
 
 
     StringBuilder jsonBody = new StringBuilder();
@@ -135,12 +135,12 @@ public class LieuServlet extends HttpServlet {
 
   @Override
   protected void doDelete(HttpServletRequest request, HttpServletResponse response) throws IOException {
-    if (!this.validateId(response, request.getParameter("lieuId"))) {
+    if (!this.validateId(response, request.getParameter("id"))) {
       return;
     }
 
     try {
-      int lieuId = Integer.parseInt(request.getParameter("lieuId"));
+      int lieuId = Integer.parseInt(request.getParameter("id"));
       boolean deleted = Lieu.supprimerLieu(lieuId);
       if (deleted) {
         response.setStatus(HttpServletResponse.SC_NO_CONTENT);

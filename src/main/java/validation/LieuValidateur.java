@@ -30,8 +30,8 @@ public class LieuValidateur implements Validateur<LieuPojo> {
     }
 
     // Validation de la capacité d'accueil
-    if (input.getCapaciteAccueil() < 0) {
-      errorMessages.add("La capacité d'accueil ne peut pas être négative.");
+    if (input.getCapaciteAccueil() <= 0) {
+      errorMessages.add("La capacité d'accueil ne peut pas être négative ou nulle.");
       isValid = false;
     }
 

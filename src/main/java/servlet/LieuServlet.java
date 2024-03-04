@@ -20,24 +20,20 @@ import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.Arrays;
 import java.util.List;
 
-@WebServlet(name = "LieuServlet", value = Routes.lieux)
+@WebServlet(name = "LieuServlet", urlPatterns = "/lieux/*")
 public class LieuServlet extends HttpServlet {
 
   private final Gson gson = new Gson();
 
   @Override
   protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    String pathInfo = request.getPathInfo();
     response.setContentType("application/json");
     response.setCharacterEncoding("UTF-8");
 
-    String lieuIdParam = request.getParameter("id");
-    if (lieuIdParam != null) {
+    if (pathInfo != null && pathInfo.length() > 1) {
       try {
-        if (!this.validateId(response, request.getParameter("id"))) {
-          return;
-        }
-
-        int id = Integer.parseInt(request.getParameter("id"));
+        int id = Integer.parseInt(pathInfo.substring(1));
         LieuPojo lieuEntity = Lieu.getLieuById(id);
 
         if (lieuEntity == null) {
@@ -46,18 +42,15 @@ public class LieuServlet extends HttpServlet {
         } else {
           response.getWriter().write(gson.toJson(lieuEntity));
         }
-        response.getWriter().flush();
-      } catch (IllegalArgumentException e) {
+      } catch (NumberFormatException e) {
         response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
         response.getWriter().write("{\"error\":\"Format de l'ID invalide.\"}");
-        response.getWriter().flush();
       }
-      return;
+    } else {
+      List<LieuPojo> lieux = Lieu.getListeLieux();
+      response.getWriter().write(gson.toJson(lieux));
+      response.setStatus(HttpServletResponse.SC_OK);
     }
-
-    List<LieuPojo> lieux = Lieu.getListeLieux();
-    response.getWriter().write(gson.toJson(lieux));
-    response.setStatus(HttpServletResponse.SC_OK);
     response.getWriter().flush();
   }
 
@@ -70,7 +63,6 @@ public class LieuServlet extends HttpServlet {
         jsonBody.append(line);
       }
     }
-
 
     try {
       LieuPojo lieuEntity = gson.fromJson(jsonBody.toString(), LieuPojo.class);
@@ -94,24 +86,29 @@ public class LieuServlet extends HttpServlet {
 
   @Override
   protected void doPut(HttpServletRequest request, HttpServletResponse response) throws IOException {
-    if (!this.validateId(response, request.getParameter("id"))) {
+    String pathInfo = request.getPathInfo();
+    if (pathInfo == null || pathInfo.length() <= 1) {
+      response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+      response.getWriter().write("{\"error\":\"ID du lieu requis.\"}");
       return;
     }
-    String lieuIdParam = request.getParameter("id");
 
+    int lieuId;
+    try {
+      lieuId = Integer.parseInt(pathInfo.substring(1));
+    } catch (NumberFormatException e) {
+      response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+      response.getWriter().write("{\"error\":\"Format de l'ID invalide.\"}");
+      return;
+    }
 
     StringBuilder jsonBody = new StringBuilder();
     try (BufferedReader reader = request.getReader()) {
-      String line;
-      while ((line = reader.readLine()) != null) {
-        jsonBody.append(line);
-      }
+      reader.lines().forEach(jsonBody::append);
     }
 
     try {
-      int lieuId = Integer.parseInt(lieuIdParam);
       LieuPojo lieuToUpdate = gson.fromJson(jsonBody.toString(), LieuPojo.class);
-
       LieuValidateur validateur = new LieuValidateur();
       ValidateurResultat resultat = validateur.valider(lieuToUpdate);
 
@@ -130,20 +127,31 @@ public class LieuServlet extends HttpServlet {
         response.getWriter().write(gson.toJson(updatedLieu));
         response.setStatus(HttpServletResponse.SC_OK);
       }
-    } catch (JsonSyntaxException | IllegalArgumentException e) {
+    } catch (JsonSyntaxException e) {
       response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-      response.getWriter().write("{\"error\":\"Format de données incorrect ou ID invalide.\"}");
+      response.getWriter().write("{\"error\":\"Format de données incorrect.\"}");
     }
   }
 
   @Override
   protected void doDelete(HttpServletRequest request, HttpServletResponse response) throws IOException {
-    if (!this.validateId(response, request.getParameter("id"))) {
+    String pathInfo = request.getPathInfo();
+    if (pathInfo == null || pathInfo.length() <= 1) {
+      response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+      response.getWriter().write("{\"error\":\"ID du lieu requis.\"}");
+      return;
+    }
+
+    int lieuId;
+    try {
+      lieuId = Integer.parseInt(pathInfo.substring(1));
+    } catch (NumberFormatException e) {
+      response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+      response.getWriter().write("{\"error\":\"Format de l'ID invalide.\"}");
       return;
     }
 
     try {
-      int lieuId = Integer.parseInt(request.getParameter("id"));
       boolean deleted = Lieu.supprimerLieu(lieuId);
       if (deleted) {
         response.setStatus(HttpServletResponse.SC_NO_CONTENT);
@@ -151,30 +159,10 @@ public class LieuServlet extends HttpServlet {
         response.setStatus(HttpServletResponse.SC_NOT_FOUND);
         response.getWriter().write("{\"error\":\"Lieu non trouvé.\"}");
       }
-    } catch (IllegalArgumentException e) {
-      response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-      response.getWriter().write("{\"error\":\"Format de l'ID invalide.\"}");
-    } catch (SQLIntegrityConstraintViolationException e) {
-      response.setStatus(HttpServletResponse.SC_CONFLICT);
-      response.getWriter().write("{\"error\":\"Impossible de supprimer le lieu car il est utilisé par un événement.\"}");
     } catch (Exception e) {
       response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
       // Log the exception
-      response.getWriter().
-              write("{\"error\":\"Une erreur s'est produite.\"" +
-                      "\n\"message\": \" " + Arrays.toString(e.getStackTrace()) + "\"}");
+      response.getWriter().write("{\"error\":\"Une erreur s'est produite.\"}");
     }
-  }
-
-  private boolean validateId(HttpServletResponse response, String id) throws IOException {
-    IdValidateur idValidateur = new IdValidateur();
-    ValidateurResultat validationResult = idValidateur.valider(id);
-    if (!validationResult.isValid()) {
-      response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-      response.getWriter().write("{\"error\":\"" + validationResult.getErrorMessages() + "\"}");
-      response.getWriter().flush();
-      return false;
-    }
-    return true;
   }
 }

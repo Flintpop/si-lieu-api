@@ -25,7 +25,7 @@ public class LieuxApiTests {
             .body(newLocationJson)
             .when().post("http://localhost:8082/lieux")
             .then().statusCode(201)
-            .log().ifError();
+            .log();
   }
 
   @Test
@@ -34,7 +34,7 @@ public class LieuxApiTests {
     given().pathParam("lieuId", invalidId)
             .when().get("http://localhost:8082/lieux/{lieuId}")
             .then().statusCode(404) // Supposant que l'API renvoie 404 pour un ID non trouvé
-            .log().ifError(); // Logge la réponse en cas d'erreur
+            .log();
   }
 
   @Test
@@ -50,7 +50,6 @@ public class LieuxApiTests {
     given().contentType("application/json")
             .body(badLocationJson)
             .when().post("http://localhost:8082/lieux")
-            .then().statusCode(400) // Supposant que l'API renvoie 400 pour un body incorrect
-            .log().ifError(); // Logge la réponse en cas d'erreur
+            .then().statusCode(400); // Supposant que l'API renvoie 400 pour un body incorrect
   }
 }

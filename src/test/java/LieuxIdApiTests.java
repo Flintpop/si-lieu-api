@@ -8,10 +8,8 @@ public class LieuxIdApiTests {
   @Test
   public void testGetLocationById() {
     int testId = 2; // Assurez-vous que cet ID existe dans votre base de données ou mock
-    given()
-            .pathParam("id", testId)
-            .when()
-            .get("http://localhost:8082/lieux?id={id}")
+    given().pathParam("lieuId", testId)
+            .when().get("http://localhost:8082/lieux/{lieuId}")
             .then()
             .log().ifValidationFails()
             .statusCode(200)
@@ -31,11 +29,10 @@ public class LieuxIdApiTests {
                 }
                 """;
 
-    given()
+    given().pathParam("lieuId", testId)
             .contentType("application/json")
             .body(updatedLocationJson)
-            .when()
-            .put("http://localhost:8082/lieux?id=" + testId)
+            .when().put("http://localhost:8082/lieux/{lieuId}")
             .then()
             .log().ifValidationFails()
             .statusCode(200)
@@ -46,9 +43,9 @@ public class LieuxIdApiTests {
   public void testDeleteLocation() {
     int testId = 1; // Assurez-vous que cet ID existe et est supprimable
     given()
-            .pathParam("id", testId)
+            .pathParam("lieuId", testId)
             .when()
-            .delete("http://localhost:8082/lieux?id={id}")
+            .delete("http://localhost:8082/lieux/{lieuId}")
             .then()
             .log().ifValidationFails()
             .statusCode(204)

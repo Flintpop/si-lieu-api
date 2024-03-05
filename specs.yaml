@@ -101,14 +101,6 @@ components:
         address:
           type: string
           description: Adresse du lieu.
-        latitude:
-          type: number
-          format: float
-          description: Latitude du lieu.
-        longitude:
-          type: number
-          format: float
-          description: Longitude du lieu.
 
     LocationList:
       type: array

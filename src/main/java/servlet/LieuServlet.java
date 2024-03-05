@@ -2,23 +2,20 @@ package servlet;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
+import jakarta.persistence.PersistenceException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.validation.ConstraintViolationException;
 import model.Lieu;
 import mariadbPojo.LieuPojo;
-import routes.Routes;
-import validation.IdValidateur;
 import validation.LieuValidateur;
 import validation.ValidateurResultat;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.sql.SQLIntegrityConstraintViolationException;
-import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @WebServlet(name = "LieuServlet", urlPatterns = "/lieux/*")
 public class LieuServlet extends HttpServlet {
@@ -27,142 +24,83 @@ public class LieuServlet extends HttpServlet {
 
   @Override
   protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
-    String pathInfo = request.getPathInfo();
     response.setContentType("application/json");
     response.setCharacterEncoding("UTF-8");
 
-    if (pathInfo != null && pathInfo.length() > 1) {
-      try {
-        int id = Integer.parseInt(pathInfo.substring(1));
-        LieuPojo lieuEntity = Lieu.getLieuById(id);
-
-        if (lieuEntity == null) {
-          response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-          response.getWriter().write("{\"error\":\"Lieu non trouvé.\"}");
-        } else {
-          response.getWriter().write(gson.toJson(lieuEntity));
-        }
-      } catch (NumberFormatException e) {
-        response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-        response.getWriter().write("{\"error\":\"Format de l'ID invalide.\"}");
-      }
-    } else {
-      List<LieuPojo> lieux = Lieu.getListeLieux();
-      response.getWriter().write(gson.toJson(lieux));
-      response.setStatus(HttpServletResponse.SC_OK);
+    Integer lieuId = ServletUtils.extraireEtValiderId(request.getPathInfo(), response, false);
+    if (lieuId == null) {
+      return; // La validation de l'ID a échoué.
     }
-    response.getWriter().flush();
+
+    if (lieuId == -1) {
+      List<LieuPojo> lieux = Lieu.getListeLieux();
+      ServletUtils.envoyerReponseJson(response, HttpServletResponse.SC_OK, gson.toJson(lieux));
+      return;
+    }
+
+    LieuPojo lieuEntity = Lieu.getLieuById(lieuId);
+    if (lieuEntity == null) {
+      ServletUtils.envoyerReponseJson(response, HttpServletResponse.SC_NOT_FOUND, "{\"error\":\"Lieu non trouvé.\"}");
+    } else {
+      ServletUtils.envoyerReponseJson(response, HttpServletResponse.SC_OK, gson.toJson(lieuEntity));
+    }
   }
 
   @Override
   protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
-    StringBuilder jsonBody = new StringBuilder();
-    try (BufferedReader reader = request.getReader()) {
-      String line;
-      while ((line = reader.readLine()) != null) {
-        jsonBody.append(line);
-      }
-    }
-
+    String jsonBody = ServletUtils.lireCorpsRequete(request);
     try {
-      LieuPojo lieuEntity = gson.fromJson(jsonBody.toString(), LieuPojo.class);
-      LieuValidateur validateur = new LieuValidateur();
-      ValidateurResultat resultat = validateur.valider(lieuEntity);
+      LieuPojo lieuEntity = gson.fromJson(jsonBody, LieuPojo.class);
+      LieuValidateur lieuValidateur = new LieuValidateur();
+      ValidateurResultat validateurResultat = lieuValidateur.valider(lieuEntity);
+      LieuPojo createdLieu = Lieu.creerLieu(lieuEntity);
 
-      if (!resultat.isValid()) {
-        response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-        response.getWriter().write(gson.toJson(resultat.getErrorMessages()));
-        return;
+      if (!validateurResultat.isValid()) {
+        Map<String, Object> errors = new HashMap<>();
+        errors.put("errors", validateurResultat.getErrorMessages());
+        ServletUtils.envoyerReponseJson(response, HttpServletResponse.SC_BAD_REQUEST, gson.toJson(errors));        return;
       }
 
-      LieuPojo createdLieu = Lieu.creerLieu(lieuEntity);
-      response.setStatus(HttpServletResponse.SC_CREATED);
-      response.getWriter().write(gson.toJson(createdLieu));
+      ServletUtils.envoyerReponseJson(response, HttpServletResponse.SC_CREATED, gson.toJson(createdLieu));
     } catch (JsonSyntaxException e) {
-      response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-      response.getWriter().write("{\"error\":\"Format de données incorrect.\"}");
+      ServletUtils.envoyerReponseJson(response, HttpServletResponse.SC_BAD_REQUEST, "{\"error\":\"Format de données incorrect.\"}");
     }
   }
 
   @Override
   protected void doPut(HttpServletRequest request, HttpServletResponse response) throws IOException {
-    String pathInfo = request.getPathInfo();
-    if (pathInfo == null || pathInfo.length() <= 1) {
-      response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-      response.getWriter().write("{\"error\":\"ID du lieu requis.\"}");
-      return;
+    Integer lieuId = ServletUtils.extraireEtValiderId(request.getPathInfo(), response, true);
+    if (lieuId == null || lieuId < 0) {
+      return; // La validation de l'ID a échoué
     }
 
-    int lieuId;
+    String jsonBody = ServletUtils.lireCorpsRequete(request);
     try {
-      lieuId = Integer.parseInt(pathInfo.substring(1));
-    } catch (NumberFormatException e) {
-      response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-      response.getWriter().write("{\"error\":\"Format de l'ID invalide.\"}");
-      return;
-    }
-
-    StringBuilder jsonBody = new StringBuilder();
-    try (BufferedReader reader = request.getReader()) {
-      reader.lines().forEach(jsonBody::append);
-    }
-
-    try {
-      LieuPojo lieuToUpdate = gson.fromJson(jsonBody.toString(), LieuPojo.class);
-      LieuValidateur validateur = new LieuValidateur();
-      ValidateurResultat resultat = validateur.valider(lieuToUpdate);
-
-      if (!resultat.isValid()) {
-        response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-        response.getWriter().write(gson.toJson(resultat.getErrorMessages()));
-        return;
-      }
+      LieuPojo lieuToUpdate = gson.fromJson(jsonBody, LieuPojo.class);
 
       LieuPojo updatedLieu = Lieu.mettreAJourLieu(lieuId, lieuToUpdate);
-
-      if (updatedLieu == null) {
-        response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-        response.getWriter().write("{\"error\":\"Lieu non trouvé.\"}");
-      } else {
-        response.getWriter().write(gson.toJson(updatedLieu));
-        response.setStatus(HttpServletResponse.SC_OK);
-      }
-    } catch (JsonSyntaxException e) {
-      response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-      response.getWriter().write("{\"error\":\"Format de données incorrect.\"}");
+      ServletUtils.envoyerReponseJson(response, HttpServletResponse.SC_OK, gson.toJson(updatedLieu));
+    } catch (JsonSyntaxException | PersistenceException e) {
+      ServletUtils.envoyerReponseJson(response, HttpServletResponse.SC_BAD_REQUEST, "{\"error\":\"Format de données incorrect.\"}");
     }
   }
 
   @Override
   protected void doDelete(HttpServletRequest request, HttpServletResponse response) throws IOException {
-    String pathInfo = request.getPathInfo();
-    if (pathInfo == null || pathInfo.length() <= 1) {
-      response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-      response.getWriter().write("{\"error\":\"ID du lieu requis.\"}");
-      return;
-    }
-
-    int lieuId;
-    try {
-      lieuId = Integer.parseInt(pathInfo.substring(1));
-    } catch (NumberFormatException e) {
-      response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-      response.getWriter().write("{\"error\":\"Format de l'ID invalide.\"}");
-      return;
+    Integer lieuId = ServletUtils.extraireEtValiderId(request.getPathInfo(), response, true);
+    if (lieuId == null || lieuId < 0) {
+      return; // La validation de l'ID a échoué.
     }
 
     try {
       boolean deleted = Lieu.supprimerLieu(lieuId);
       if (deleted) {
-        response.setStatus(HttpServletResponse.SC_NO_CONTENT);
+        ServletUtils.envoyerReponseJson(response, HttpServletResponse.SC_NO_CONTENT, "{" + "\"message\":\"Lieu supprimé avec succès.\"}");
       } else {
-        response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-        response.getWriter().write("{\"error\":\"Lieu non trouvé.\"}");
+        ServletUtils.envoyerReponseJson(response, HttpServletResponse.SC_NOT_FOUND, "{\"error\":\"Lieu non trouvé.\"}");
       }
     } catch (Exception e) {
-      response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-      // Log the exception
-      response.getWriter().write("{\"error\":\"Une erreur s'est produite.\"}");
+      ServletUtils.envoyerReponseJson(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "{\"error\":\"Une erreur s'est produite.\"}");
     }
   }
 }

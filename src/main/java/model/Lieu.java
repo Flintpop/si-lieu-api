@@ -47,9 +47,14 @@ public class Lieu {
     try {
       LieuPojo lieu = em.find(LieuPojo.class, id);
       if (lieu != null) {
+        System.out.println("Capacité actuelle: " + lieu.getCapaciteAccueil());
         em.getTransaction().begin();
         lieu.setNom(lieuMisAJour.getNom());
         lieu.setAdresse(lieuMisAJour.getAdresse());
+        lieu.setCapaciteAccueil(lieuMisAJour.getCapaciteAccueil());
+        System.out.println("Nouveau nom: " + lieu.getNom());
+        System.out.println("Nouvelle adresse: " + lieu.getAdresse());
+        System.out.println("Nouvelle capacité: " + lieu.getCapaciteAccueil());
         em.getTransaction().commit();
         return lieu;
       }

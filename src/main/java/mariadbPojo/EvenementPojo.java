@@ -1,10 +1,14 @@
 package mariadbPojo;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.sql.Timestamp;
 import java.util.Objects;
 
+@Getter
+@Setter
 @Entity
 @Table(name = "evenement", schema = "uboeventflow_bdd")
 public class EvenementPojo {
@@ -25,30 +29,6 @@ public class EvenementPojo {
   @ManyToOne
   @JoinColumn(name = "lieuId", referencedColumnName = "id", nullable = false)
   private LieuPojo lieu;
-
-  public int getId() {
-    return id;
-  }
-
-  public void setId(int id) {
-    this.id = id;
-  }
-
-  public Timestamp getDateHeureDebut() {
-    return dateHeureDebut;
-  }
-
-  public void setDateHeureDebut(Timestamp dateHeureDebut) {
-    this.dateHeureDebut = dateHeureDebut;
-  }
-
-  public Timestamp getDateHeureFin() {
-    return dateHeureFin;
-  }
-
-  public void setDateHeureFin(Timestamp dateHeureFin) {
-    this.dateHeureFin = dateHeureFin;
-  }
 
   @Override
   public boolean equals(Object o) {
@@ -71,11 +51,4 @@ public class EvenementPojo {
     return result;
   }
 
-  public LieuPojo getLieu() {
-    return lieu;
-  }
-
-  public void setLieu(LieuPojo lieuByLieuId) {
-    this.lieu = lieuByLieuId;
-  }
 }

@@ -13,17 +13,14 @@ public class EvenementPojo {
   @Column(name = "id", nullable = false)
   private int id;
   @Basic
-  @Column(name = "nom", nullable = false)
-  private String nom;
+  @Column(name = "titre", nullable = false)
+  private String titre;
   @Basic
   @Column(name = "dateHeureDebut", nullable = false)
   private Timestamp dateHeureDebut;
   @Basic
   @Column(name = "dateHeureFin", nullable = false)
   private Timestamp dateHeureFin;
-  @Basic
-  @Column(name = "maxParticipant", nullable = false)
-  private int maxParticipant;
 
   @ManyToOne
   @JoinColumn(name = "lieuId", referencedColumnName = "id", nullable = false)
@@ -35,14 +32,6 @@ public class EvenementPojo {
 
   public void setId(int id) {
     this.id = id;
-  }
-
-  public String getNom() {
-    return nom;
-  }
-
-  public void setNom(String nom) {
-    this.nom = nom;
   }
 
   public Timestamp getDateHeureDebut() {
@@ -61,15 +50,6 @@ public class EvenementPojo {
     this.dateHeureFin = dateHeureFin;
   }
 
-  public int getMaxParticipant() {
-    return maxParticipant;
-  }
-
-  public void setMaxParticipant(int maxParticipant) {
-    this.maxParticipant = maxParticipant;
-  }
-
-
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -78,8 +58,6 @@ public class EvenementPojo {
     EvenementPojo that = (EvenementPojo) o;
 
     if (id != that.id) return false;
-    if (maxParticipant != that.maxParticipant) return false;
-    if (nom != null ? !nom.equals(that.nom) : that.nom != null) return false;
     if (dateHeureDebut != null ? !dateHeureDebut.equals(that.dateHeureDebut) : that.dateHeureDebut != null)
       return false;
     return Objects.equals(dateHeureFin, that.dateHeureFin);
@@ -88,10 +66,8 @@ public class EvenementPojo {
   @Override
   public int hashCode() {
     int result = id;
-    result = 31 * result + (nom != null ? nom.hashCode() : 0);
     result = 31 * result + (dateHeureDebut != null ? dateHeureDebut.hashCode() : 0);
     result = 31 * result + (dateHeureFin != null ? dateHeureFin.hashCode() : 0);
-    result = 31 * result + maxParticipant;
     return result;
   }
 
